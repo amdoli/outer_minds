@@ -5,6 +5,8 @@
 #include <string.h>
 
 #define MAX_NAME_SIZE 128
+#define MAX_NUMBER_OF_LINES 32
+#define BASE_LIST 16
 
 #if defined(__linux__) || defined(__gnu_linux__)
 #define OUTER_MINDS_PLATFORM_LINUX 1
@@ -34,10 +36,63 @@
 typedef struct {
   char name[MAX_NAME_SIZE];
   int id;
+  int source_node;
+  int target_node;
+} line_t;
+
+typedef struct {
+  char name[MAX_NAME_SIZE];
+  int id;
   // pos [-1 , 1]
   double x_pos;
   double y_pos;
-} node;
+  double area;
+} node_t;
+
+typedef struct {
+  node_t *nodes;
+  line_t *lines;
+  int num_of_nodes;
+  int num_of_lines;
+  int nodes_limit;
+  int lines_limit;
+} graph;
+
+int graph_init(graph *current_graph) {
+  current_graph->nodes = malloc(sizeof(node_t) * BASE_LIST);
+  if (!current_graph->nodes) {
+    perror("nodes malloc failed");
+    return -1;
+  }
+
+  current_graph->lines = malloc(sizeof(line_t) * BASE_LIST);
+  if (!current_graph->lines) {
+    perror("lines malloc failed");
+    free(current_graph->nodes);
+    return -1;
+  }
+  current_graph->num_of_nodes = 0;
+  current_graph->num_of_lines = 0;
+  current_graph->nodes_limit = BASE_LIST;
+  current_graph->lines_limit = BASE_LIST;
+  return 0;
+}
+
+int add_node(graph *current_graph, node_t node) {
+  if (current_graph->num_of_nodes >= current_graph->nodes_limit) {
+    current_graph->nodes_limit *= 2;
+    void *ptr = realloc(current_graph->nodes,
+                        current_graph->nodes_limit * sizeof(node_t));
+    if (!ptr) {
+      perror("failed realloc nodes");
+      return -1;
+    }
+    current_graph->nodes = ptr;
+  }
+
+  current_graph->nodes[current_graph->num_of_nodes++] = node;
+  return 0;
+}
 
 /* getting the file name */
 int get_filename(const char *dir_path) {
@@ -74,7 +129,7 @@ int get_filename(const char *dir_path) {
 
 /* writing to a file */
 
-int write_to_json(const node n, const char *filename) {
+int write_to_json(const node_t n, const char *filename) {
 
   yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
   if (!doc) {
@@ -134,7 +189,7 @@ int main(int argc, char **argv) {
   return EXIT_SUCCESS;
 #endif
 
-  node n1;
+  node_t n1;
 
   printf("Enter the the name of the node:");
   if (fgets(n1.name, MAX_NAME_SIZE, stdin) == NULL) {
