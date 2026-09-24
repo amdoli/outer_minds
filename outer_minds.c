@@ -33,6 +33,9 @@
 #include <windows.h>
 #endif
 
+/* Outer_minds Types */
+
+// line_t
 typedef struct {
   char name[MAX_NAME_SIZE];
   int id;
@@ -40,6 +43,7 @@ typedef struct {
   int target_node;
 } line_t;
 
+// node_t
 typedef struct {
   char name[MAX_NAME_SIZE];
   int id;
@@ -49,6 +53,7 @@ typedef struct {
   double area;
 } node_t;
 
+// graph_t
 typedef struct {
   node_t *nodes;
   line_t *lines;
@@ -56,9 +61,9 @@ typedef struct {
   int num_of_lines;
   int nodes_limit;
   int lines_limit;
-} graph;
+} graph_t;
 
-int graph_init(graph *current_graph) {
+int graph_init(graph_t *current_graph) {
   current_graph->nodes = malloc(sizeof(node_t) * BASE_LIST);
   if (!current_graph->nodes) {
     perror("nodes malloc failed");
@@ -78,19 +83,41 @@ int graph_init(graph *current_graph) {
   return 0;
 }
 
-int add_node(graph *current_graph, node_t node) {
+int add_node(graph_t *current_graph, node_t node) {
   if (current_graph->num_of_nodes >= current_graph->nodes_limit) {
-    current_graph->nodes_limit *= 2;
-    void *ptr = realloc(current_graph->nodes,
-                        current_graph->nodes_limit * sizeof(node_t));
+    int new_limit = current_graph->nodes_limit * 2;
+    void *ptr = realloc(current_graph->nodes, new_limit * sizeof(node_t));
     if (!ptr) {
       perror("failed realloc nodes");
       return -1;
     }
     current_graph->nodes = ptr;
+    current_graph->nodes_limit = new_limit;
   }
 
   current_graph->nodes[current_graph->num_of_nodes++] = node;
+  return 0;
+}
+
+int add_line(graph_t *current_graph, line_t line) {
+  if (current_graph->num_of_lines >= current_graph->lines_limit) {
+    int new_limit = current_graph->lines_limit * 2;
+    void *ptr = realloc(current_graph->lines, new_limit * sizeof(line_t));
+    if (!ptr) {
+      perror("failed realloc lines");
+      return -1;
+    }
+    current_graph->lines = ptr;
+    current_graph->lines_limit = new_limit;
+  }
+
+  current_graph->lines[current_graph->num_of_lines++] = line;
+  return 0;
+}
+
+int graph_free(graph_t *current_graph) {
+  free(current_graph->lines);
+  free(current_graph->nodes);
   return 0;
 }
 
@@ -176,6 +203,39 @@ int write_to_json(const node_t n, const char *filename) {
 }
 
 int main(int argc, char **argv) {
+
+#ifdef TEST_GRAPH
+  if (argc != 2) {
+    fprintf(stderr, "Usage: %s <loop size>", argv[0]);
+    return 1;
+  }
+
+  int i = 0;
+  int j = 0;
+  node_t n = {"node_test", i++, -2, 5, 10};
+  line_t l = {"line_test", j++, j - 1, j};
+
+  graph_t graph;
+  if (graph_init(&graph) != 0) {
+    return 1;
+  }
+
+  int iteration = (int)strtol(argv[1], NULL, 0);
+  for (int ii = 0; ii < iteration; ii++) {
+    int result = add_node(&graph, n);
+    if (result != 0)
+      return 1;
+    result = add_line(&graph, l);
+    if (result != 0)
+      return 1;
+  }
+  printf("graph lines = %d | graph_lim = %d\n", graph.num_of_lines,
+         graph.lines_limit);
+  printf("graph nodes = %d | graph_lim = %d\n", graph.num_of_nodes,
+         graph.nodes_limit);
+  graph_free(&graph);
+  return 0;
+#endif
 
   if (argc != 2) {
     fprintf(stderr, "Usage: %s <filename.json>\n", argv[0]);
