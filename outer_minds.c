@@ -121,6 +121,10 @@ int graph_free(graph_t *current_graph) {
   return 0;
 }
 
+int graph_write_json(const graph_t current_graph, FILE *json_file) {
+  // HERE
+}
+
 /* getting the file name */
 int get_filename(const char *dir_path) {
 #if OUTER_MINDS_HAS_DIRENT
