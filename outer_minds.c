@@ -121,8 +121,67 @@ int graph_free(graph_t *current_graph) {
   return 0;
 }
 
-int graph_write_json(const graph_t current_graph, FILE *json_file) {
-  // HERE
+char *graph_write_json(const graph_t *graph, yyjson_mut_doc *doc,
+                       yyjson_mut_val *root) {
+  // it requires doc and root to be already linked
+  if (!graph || !doc || !root)
+    return NULL;
+
+  yyjson_mut_val *nodes_arr = yyjson_mut_arr(doc);
+  if (!nodes_arr) {
+    fprintf(
+        stderr,
+        "Error: yyjson_mut_arr failed to return data due to lack of memory\n");
+    return NULL;
+  }
+  for (int i = 0; i < graph->num_of_nodes; i++) {
+    // Create an object {} for node
+    yyjson_mut_val *node_obj = yyjson_mut_obj(doc);
+    const node_t *current_node = &graph->nodes[i];
+    // node_t = {name, id, xpos, ypos, area}
+    yyjson_mut_obj_add_str(doc, node_obj, "name", current_node->name);
+    yyjson_mut_obj_add_int(doc, node_obj, "id", current_node->id);
+    yyjson_mut_obj_add_double(doc, node_obj, "x_pos", current_node->x_pos);
+    yyjson_mut_obj_add_double(doc, node_obj, "y_pos", current_node->y_pos);
+    yyjson_mut_obj_add_double(doc, node_obj, "area", current_node->area);
+
+    // append object to array
+    yyjson_mut_arr_append(nodes_arr, node_obj);
+  }
+
+  yyjson_mut_val *lines_arr = yyjson_mut_arr(doc);
+  if (!lines_arr) {
+    fprintf(
+        stderr,
+        "Error: yyjson_mut_arr failed to return data due to lack of memory\n");
+    return NULL;
+  }
+
+  for (int i = 0; i < graph->num_of_lines; i++) {
+    yyjson_mut_val *line_obj = yyjson_mut_obj(doc);
+    const line_t *current_line = &graph->lines[i];
+    // line_t = {name, id, source, target}
+    yyjson_mut_obj_add_str(doc, line_obj, "name", current_line->name);
+    yyjson_mut_obj_add_int(doc, line_obj, "id", current_line->id);
+    yyjson_mut_obj_add_int(doc, line_obj, "source_id",
+                           current_line->source_node);
+    yyjson_mut_obj_add_int(doc, line_obj, "target_id",
+                           current_line->target_node);
+
+    yyjson_mut_arr_append(lines_arr, line_obj);
+  }
+
+  // now we can add the object array to the root
+  yyjson_mut_obj_add_val(doc, root, "nodes", nodes_arr);
+  yyjson_mut_obj_add_val(doc, root, "lines", lines_arr);
+
+  char *json = yyjson_mut_write(doc, YYJSON_WRITE_PRETTY, NULL);
+  if (!json) {
+    fprintf(stderr, "Error: yyjson_mut_write failed to generate JSON string\n");
+    return NULL;
+  }
+
+  return json;
 }
 
 /* getting the file name */
@@ -237,7 +296,42 @@ int main(int argc, char **argv) {
          graph.lines_limit);
   printf("graph nodes = %d | graph_lim = %d\n", graph.num_of_nodes,
          graph.nodes_limit);
+
+  yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
+  if (!doc) {
+    graph_free(&graph);
+    return 1;
+  }
+
+  yyjson_mut_val *root = yyjson_mut_obj(doc);
+  if (!root) {
+    graph_free(&graph);
+    yyjson_mut_doc_free(doc);
+    return 1;
+  }
+
+  yyjson_mut_doc_set_root(doc, root);
+
+  char *json = graph_write_json(&graph, doc, root);
+  if (!json) {
+    graph_free(&graph);
+    yyjson_mut_doc_free(doc);
+    return 1;
+  }
+  FILE *file = fopen("test.json", "w");
+  if (!file) {
+    perror("Error opening a file");
+    graph_free(&graph);
+    yyjson_mut_doc_free(doc);
+    return 1;
+  }
+
+  fputs(json, file);
+
+  fclose(file);
   graph_free(&graph);
+  yyjson_mut_doc_free(doc);
+  free((void *)json);
   return 0;
 #endif
 
