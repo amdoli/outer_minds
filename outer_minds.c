@@ -1,10 +1,10 @@
+#include "outer_minds.h"
 #include "include/yyjson.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_NAME_SIZE 128
 #define MAX_NUMBER_OF_LINES 32
 #define BASE_LIST 16
 
@@ -34,34 +34,6 @@
 #endif
 
 /* Outer_minds Types */
-
-// line_t
-typedef struct {
-  char name[MAX_NAME_SIZE];
-  int id;
-  int source_node;
-  int target_node;
-} line_t;
-
-// node_t
-typedef struct {
-  char name[MAX_NAME_SIZE];
-  int id;
-  // pos [-1 , 1]
-  double x_pos;
-  double y_pos;
-  double area;
-} node_t;
-
-// graph_t
-typedef struct {
-  node_t *nodes;
-  line_t *lines;
-  int num_of_nodes;
-  int num_of_lines;
-  int nodes_limit;
-  int lines_limit;
-} graph_t;
 
 int graph_init(graph_t *current_graph) {
   current_graph->nodes = malloc(sizeof(node_t) * BASE_LIST);
@@ -215,160 +187,4 @@ int get_filename(const char *dir_path) {
   fprintf(stderr, "I will work on it as soon I'm free");
   return -1;
 #endif
-}
-
-/* writing to a file */
-
-int write_to_json(const node_t n, const char *filename) {
-
-  yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
-  if (!doc) {
-    perror("Failed to create JSON document");
-    return -1;
-  }
-
-  yyjson_mut_val *root = yyjson_mut_obj(doc);
-  if (!root) {
-    perror("Failed to create JSON root");
-    yyjson_mut_doc_free(doc);
-    return -1;
-  }
-
-  yyjson_mut_doc_set_root(doc, root);
-
-  yyjson_mut_obj_add_str(doc, root, "name", n.name);
-  yyjson_mut_obj_add_int(doc, root, "id", n.id);
-  yyjson_mut_obj_add_double(doc, root, "x_pos", n.x_pos);
-  yyjson_mut_obj_add_double(doc, root, "y_pos", n.y_pos);
-
-  const char *json = yyjson_mut_write(doc, 0, NULL);
-  if (!json) {
-    fprintf(stderr, "Error: json variable failed to recive data.\n");
-    yyjson_mut_doc_free(doc);
-    return -1;
-  }
-
-  FILE *file = fopen(filename, "w");
-  if (!file) {
-    perror("Error opening json file");
-    free((void *)json);
-    yyjson_mut_doc_free(doc);
-    return -1;
-  }
-
-  fputs(json, file);
-
-  fclose(file);
-  free((void *)json);
-  yyjson_mut_doc_free(doc);
-
-  return 0;
-}
-
-int main(int argc, char **argv) {
-
-#ifdef TEST_GRAPH
-  if (argc != 2) {
-    fprintf(stderr, "Usage: %s <loop size>", argv[0]);
-    return 1;
-  }
-
-  int i = 0;
-  int j = 0;
-  node_t n = {"node_test", i++, -2, 5, 10};
-  line_t l = {"line_test", j++, j - 1, j};
-
-  graph_t graph;
-  if (graph_init(&graph) != 0) {
-    return 1;
-  }
-
-  int iteration = (int)strtol(argv[1], NULL, 0);
-  for (int ii = 0; ii < iteration; ii++) {
-    int result = add_node(&graph, n);
-    if (result != 0)
-      return 1;
-    result = add_line(&graph, l);
-    if (result != 0)
-      return 1;
-  }
-  printf("graph lines = %d | graph_lim = %d\n", graph.num_of_lines,
-         graph.lines_limit);
-  printf("graph nodes = %d | graph_lim = %d\n", graph.num_of_nodes,
-         graph.nodes_limit);
-
-  yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
-  if (!doc) {
-    graph_free(&graph);
-    return 1;
-  }
-
-  yyjson_mut_val *root = yyjson_mut_obj(doc);
-  if (!root) {
-    graph_free(&graph);
-    yyjson_mut_doc_free(doc);
-    return 1;
-  }
-
-  yyjson_mut_doc_set_root(doc, root);
-
-  char *json = graph_write_json(&graph, doc, root);
-  if (!json) {
-    graph_free(&graph);
-    yyjson_mut_doc_free(doc);
-    return 1;
-  }
-  FILE *file = fopen("test.json", "w");
-  if (!file) {
-    perror("Error opening a file");
-    graph_free(&graph);
-    yyjson_mut_doc_free(doc);
-    return 1;
-  }
-
-  fputs(json, file);
-
-  fclose(file);
-  graph_free(&graph);
-  yyjson_mut_doc_free(doc);
-  free((void *)json);
-  return 0;
-#endif
-
-  if (argc != 2) {
-    fprintf(stderr, "Usage: %s <filename.json>\n", argv[0]);
-    return 1;
-  }
-
-#ifdef TEST
-  int res = get_filename(argv[1]);
-  if (res != 0)
-    return EXIT_FAILURE;
-  return EXIT_SUCCESS;
-#endif
-
-  node_t n1;
-
-  printf("Enter the the name of the node:");
-  if (fgets(n1.name, MAX_NAME_SIZE, stdin) == NULL) {
-    fprintf(stderr, "Error: fgets didnt read any chars\n");
-    return 1;
-  }
-  char *pnewline = strchr(n1.name, '\n');
-  if (pnewline)
-    *pnewline = '\0';
-
-  printf("Enter the x_pos: ");
-  scanf("%lf", &n1.x_pos);
-
-  printf("Enter the y_pos: ");
-  scanf("%lf", &n1.y_pos);
-
-  n1.id = 1;
-
-  int result = write_to_json(n1, argv[1]);
-  if (result < 0) {
-    return 1;
-  }
-  return 0;
 }
