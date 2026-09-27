@@ -36,6 +36,11 @@
 /* Outer_minds Types */
 
 int graph_init(graph_t *current_graph) {
+  if (!current_graph) {
+    fprintf(stderr, "Error: Graph is NULL\n");
+    return -1;
+  }
+
   current_graph->nodes = malloc(sizeof(node_t) * BASE_LIST);
   if (!current_graph->nodes) {
     perror("nodes malloc failed");
@@ -154,6 +159,26 @@ char *graph_write_json(const graph_t *graph, yyjson_mut_doc *doc,
   }
 
   return json;
+}
+
+// test this if I didn't like it I will use the pointer method
+int graph_read_json(graph_t *graph, const char *filepath, yyjson_doc *doc,
+                    yyjson_mut_val *root) {
+  if (!graph) {
+    fprintf(stderr, "Error: graph is NULL\n");
+    return -1;
+  }
+
+  yyjson_read_err err;
+
+  doc = yyjson_read_file(filepath, 0, NULL, &err);
+  if (!doc) {
+    fprintf(stderr, "read error: %s, code: %u at byte position: %lu\n", err.msg,
+            err.code, err.pos);
+    return -1;
+  }
+
+  return 0;
 }
 
 /* getting the file name */
