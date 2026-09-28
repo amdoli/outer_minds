@@ -162,7 +162,7 @@ char *graph_write_json(const graph_t *graph, yyjson_mut_doc *doc,
 }
 
 int node_get_data(node_t *current_node, yyjson_val *nodes_arr) {
-  if (!nodes_arr) {
+  if (!nodes_arr && !yyjson_is_arr(nodes_arr)) {
     fprintf(stderr, "Error: nodes_arr is NULL.\n");
     return -1;
   }
@@ -171,7 +171,7 @@ int node_get_data(node_t *current_node, yyjson_val *nodes_arr) {
 }
 
 int line_get_data(line_t *current_line, yyjson_val *lines_arr) {
-  if (!lines_arr) {
+  if (!lines_arr && !yyjson_is_arr(lines_arr)) {
     fprintf(stderr, "Error: lines_arr is NULL.\n");
     return -1;
   }
@@ -194,7 +194,26 @@ int graph_read_json(graph_t *graph, const char *filepath, char **buffer) {
     return -1;
   }
 
+  yyjson_val *root = yyjson_doc_get_root(doc);
+  if (!root || !yyjson_is_obj(root)) {
+    yyjson_doc_free(doc);
+    return -1;
+  }
+
+  yyjson_val *nodes_arr = yyjson_obj_get(root, "nodes");
+  if (!nodes_arr && !yyjson_is_arr(nodes_arr)) {
+    yyjson_doc_free(doc);
+    return -1;
+  }
+
+  yyjson_val *lines_arr = yyjson_obj_get(root, "lines");
+  if (!lines_arr && !yyjson_is_arr(lines_arr)) {
+    yyjson_doc_free(doc);
+    return -1;
+  }
+
   *buffer = yyjson_write(doc, YYJSON_WRITE_PRETTY, NULL);
+  yyjson_doc_free(doc);
   return 0;
 }
 
