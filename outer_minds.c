@@ -1,5 +1,5 @@
 #include "outer_minds.h"
-#include "include/yyjson.h"
+#include "yyjson.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -161,23 +161,40 @@ char *graph_write_json(const graph_t *graph, yyjson_mut_doc *doc,
   return json;
 }
 
+int node_get_data(node_t *current_node, yyjson_val *nodes_arr) {
+  if (!nodes_arr) {
+    fprintf(stderr, "Error: nodes_arr is NULL.\n");
+    return -1;
+  }
+
+  return 0;
+}
+
+int line_get_data(line_t *current_line, yyjson_val *lines_arr) {
+  if (!lines_arr) {
+    fprintf(stderr, "Error: lines_arr is NULL.\n");
+    return -1;
+  }
+
+  return 0;
+}
+
 // test this if I didn't like it I will use the pointer method
-int graph_read_json(graph_t *graph, const char *filepath, yyjson_doc *doc,
-                    yyjson_mut_val *root) {
+int graph_read_json(graph_t *graph, const char *filepath, char **buffer) {
   if (!graph) {
     fprintf(stderr, "Error: graph is NULL\n");
     return -1;
   }
-
   yyjson_read_err err;
 
-  doc = yyjson_read_file(filepath, 0, NULL, &err);
+  yyjson_doc *doc = yyjson_read_file(filepath, 0, NULL, &err);
   if (!doc) {
     fprintf(stderr, "read error: %s, code: %u at byte position: %lu\n", err.msg,
             err.code, err.pos);
     return -1;
   }
 
+  *buffer = yyjson_write(doc, YYJSON_WRITE_PRETTY, NULL);
   return 0;
 }
 
