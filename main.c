@@ -6,32 +6,32 @@
 int main(int argc, char **argv) {
 
 #ifdef TEST_READ
-  if (argc != 2) {
-    fprintf(stderr, "Usage: %s <filename>\n", argv[0]);
+
+  if (argc != 3) {
+    fprintf(stderr, "Usage: %s <filename> <id>\n", argv[0]);
     return 1;
   }
 
-  graph_t *graph = malloc(sizeof(graph_t));
-  if (graph_init(graph) != 0)
-    return 1;
+  node_t n_test;
+  yyjson_read_err err;
 
-  char *buffer = malloc(sizeof(char) * 1024);
-
-  int result = graph_read_json(graph, argv[1], &buffer);
-  if (result != 0) {
-    free(graph);
+  yyjson_doc *doc = yyjson_read_file(argv[1], 0, NULL, &err);
+  if (!doc) {
+    fprintf(stderr, "read error: %s, code: %u at byte position: %lu\n", err.msg,
+            err.code, err.pos);
     return 1;
   }
 
-  printf("%s\n", buffer);
+  int id = strtol(argv[2], NULL, 0);
+  int result = node_get_data(&n_test, doc, &id);
+  if (result < 0)
+    return 1;
 
-  /*for (int i = 0; i < graph->num_of_nodes; i++) {
-    printf("%d- xpos = %f | ypos = %f\n", i, graph->nodes[i].x_pos,
-           graph->nodes[i].y_pos);
-  } */
-  free(buffer);
-  free(graph);
-  printf("SUCCEED\n");
+  printf("input = %d\n\n", id);
+
+  printf("id = %d, name = %s, x = %f, y = %f \n", n_test.id, n_test.name,
+         n_test.x_pos, n_test.y_pos);
+
   return 0;
 #endif
 

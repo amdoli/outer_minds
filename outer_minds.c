@@ -7,6 +7,7 @@
 
 #define MAX_NUMBER_OF_LINES 32
 #define BASE_LIST 16
+#define MAX_STRING_ID_LEN 19
 
 #if defined(__linux__) || defined(__gnu_linux__)
 #define OUTER_MINDS_PLATFORM_LINUX 1
@@ -161,17 +162,65 @@ char *graph_write_json(const graph_t *graph, yyjson_mut_doc *doc,
   return json;
 }
 
-int node_get_data(node_t *current_node, yyjson_val *nodes_arr) {
-  if (!nodes_arr && !yyjson_is_arr(nodes_arr)) {
-    fprintf(stderr, "Error: nodes_arr is NULL.\n");
+int node_get_data(node_t *current_node, yyjson_doc *doc, const int *id) {
+  if (!doc) {
+    fprintf(stderr, "Error: doc is NULL.\n");
     return -1;
   }
+
+  char json_pointer[MAX_STRING_ID_LEN];
+
+  int written = snprintf(json_pointer, MAX_STRING_ID_LEN, "/nodes/%d", *id);
+
+  if (written < 0) {
+    fprintf(stderr, "Error: formatting pointer failed.\n");
+    return -1;
+  }
+
+  if ((size_t)written >= sizeof json_pointer) {
+    fprintf(stderr, "Error: JSON pointer was trancated.\n");
+    return -1;
+  }
+
+  // test
+  printf("json_pointer = %s\n", json_pointer);
+
+  yyjson_val *node_obj = yyjson_doc_ptr_get(doc, json_pointer);
+  if (!node_obj) {
+    fprintf(stderr, "Error: ether the file you have chosen not formatted "
+                    "correctly, or out of index.\n");
+    return -1;
+  }
+
+  yyjson_val *id_val = yyjson_obj_get(node_obj, "id");
+  yyjson_val *name_val = yyjson_obj_get(node_obj, "name");
+  yyjson_val *x_val = yyjson_obj_get(node_obj, "x_pos");
+  yyjson_val *y_val = yyjson_obj_get(node_obj, "y_pos");
+  yyjson_val *area_val = yyjson_obj_get(node_obj, "area");
+
+  written = snprintf(current_node->name, MAX_NAME_SIZE, "%s",
+                     yyjson_get_str(name_val));
+
+  if (written < 0) {
+    fprintf(stderr, "Error: copying name failed.\n");
+    return -1;
+  }
+
+  if ((size_t)written >= sizeof current_node->name) {
+    fprintf(stderr, "Error: node name was truncated.\n");
+    return -1;
+  }
+
+  current_node->id = yyjson_get_int(id_val);
+  current_node->x_pos = yyjson_get_real(x_val);
+  current_node->y_pos = yyjson_get_real(y_val);
+  current_node->area = yyjson_get_real(area_val);
 
   return 0;
 }
 
-int line_get_data(line_t *current_line, yyjson_val *lines_arr) {
-  if (!lines_arr && !yyjson_is_arr(lines_arr)) {
+int line_get_data(line_t *current_line, yyjson_doc *doc, const int *id) {
+  if (!doc) {
     fprintf(stderr, "Error: lines_arr is NULL.\n");
     return -1;
   }

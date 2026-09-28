@@ -58,11 +58,11 @@ char *graph_write_json(const graph_t *graph, yyjson_mut_doc *doc,
 /* Get data from json's nodes array
  *
  * return 0 on success, return -1 on failure */
-int node_get_data(node_t *current_node, yyjson_val *nodes_arr);
+int node_get_data(node_t *current_node, yyjson_doc *doc, const int *id);
 /* Get data from json's lines array
  *
  * return 0 on success, return -1 on failure */
-int line_get_data(line_t *current_line, yyjson_val *lines_arr);
+int line_get_data(line_t *current_line, yyjson_doc *doc, const int *id);
 
 int graph_read_json(graph_t *graph, const char *filepath, char **buffer);
 
