@@ -1,5 +1,6 @@
 #include "outer_minds.h"
 #include "yyjson.h"
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -22,16 +23,41 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  int id = strtol(argv[2], NULL, 0);
-  int result = node_get_data(&n_test, doc, &id);
-  if (result < 0)
+  errno = 0;
+  char *endptr;
+  int id = (int)strtol(argv[2], &endptr, 0);
+  if (endptr == argv[2] || *argv[2] == '\0') {
+
+    fprintf(stderr, "Error: Argument %d ('%s') contains no valid digits.\n", 2,
+            argv[2]);
+    yyjson_doc_free(doc);
     return 1;
+  }
+  if (*endptr != '\0') {
+    fprintf(stderr, "Error: Argument %d ('%s') is junk value.\n", 2, argv[2]);
+    yyjson_doc_free(doc);
+    return 1;
+  }
+
+  if (errno == ERANGE) {
+    fprintf(stderr, "Error: Argument %d ('%s') is out of numerical range.\n", 2,
+            argv[2]);
+    yyjson_doc_free(doc);
+    return 1;
+  }
+
+  int result = node_get_data(&n_test, doc, &id);
+  if (result < 0) {
+    yyjson_doc_free(doc);
+    return 1;
+  }
 
   printf("input = %d\n\n", id);
 
   printf("id = %d, name = %s, x = %f, y = %f \n", n_test.id, n_test.name,
          n_test.x_pos, n_test.y_pos);
 
+  yyjson_doc_free(doc);
   return 0;
 #endif
 
