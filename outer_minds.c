@@ -225,6 +225,52 @@ int line_get_data(line_t *current_line, yyjson_doc *doc, const int *id) {
     return -1;
   }
 
+  char json_pointer[MAX_STRING_ID_LEN];
+
+  int written = snprintf(json_pointer, MAX_STRING_ID_LEN, "/lines/%d", *id);
+
+  if (written < 0) {
+    fprintf(stderr, "Error: formatting pointer failed.\n");
+    return -1;
+  }
+
+  if ((size_t)written >= sizeof json_pointer) {
+    fprintf(stderr, "Error: JSON pointer was trancated.\n");
+    return -1;
+  }
+
+  // test
+  printf("json_pointer = %s\n", json_pointer);
+
+  yyjson_val *line_obj = yyjson_doc_ptr_get(doc, json_pointer);
+  if (!line_obj) {
+    fprintf(stderr, "Error: ether the file you have chosen not formatted "
+                    "correctly, or out of index.\n");
+    return -1;
+  }
+
+  yyjson_val *id_val = yyjson_obj_get(line_obj, "id");
+  yyjson_val *name_val = yyjson_obj_get(line_obj, "name");
+  yyjson_val *source_val = yyjson_obj_get(line_obj, "source_id");
+  yyjson_val *target_val = yyjson_obj_get(line_obj, "target_id");
+
+  written = snprintf(current_line->name, MAX_NAME_SIZE, "%s",
+                     yyjson_get_str(name_val));
+
+  if (written < 0) {
+    fprintf(stderr, "Error: copying name failed.\n");
+    return -1;
+  }
+
+  if ((size_t)written >= sizeof current_line->name) {
+    fprintf(stderr, "Error: line name was truncated.\n");
+    return -1;
+  }
+
+  current_line->id = yyjson_get_int(id_val);
+  current_line->source_node = yyjson_get_int(source_val);
+  current_line->target_node = yyjson_get_int(target_val);
+
   return 0;
 }
 

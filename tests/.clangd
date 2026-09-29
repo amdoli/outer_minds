@@ -1,0 +1,7 @@
+CompileFlags:
+  Add:
+    - "-I../include"
+    - "-I.."
+    - "-DTEST_READ_ALL"
+    - "-DTEST_READ_NODE"
+    - "-DTEST_READ_LINE"
