@@ -162,7 +162,7 @@ char *graph_write_json(const graph_t *graph, yyjson_mut_doc *doc,
   return json;
 }
 
-int node_get_data(node_t *current_node, yyjson_doc *doc, const int *id) {
+int node_get_data_by_id(node_t *current_node, yyjson_doc *doc, const int *id) {
   if (!doc) {
     fprintf(stderr, "Error: doc is NULL.\n");
     return -1;
@@ -219,7 +219,7 @@ int node_get_data(node_t *current_node, yyjson_doc *doc, const int *id) {
   return 0;
 }
 
-int line_get_data(line_t *current_line, yyjson_doc *doc, const int *id) {
+int line_get_data_by_id(line_t *current_line, yyjson_doc *doc, const int *id) {
   if (!doc) {
     fprintf(stderr, "Error: lines_arr is NULL.\n");
     return -1;
@@ -256,8 +256,8 @@ int line_get_data(line_t *current_line, yyjson_doc *doc, const int *id) {
 
   written = snprintf(current_line->name, MAX_NAME_SIZE, "%s",
                      yyjson_get_str(name_val));
-
   if (written < 0) {
+
     fprintf(stderr, "Error: copying name failed.\n");
     return -1;
   }

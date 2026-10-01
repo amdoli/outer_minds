@@ -58,12 +58,15 @@ char *graph_write_json(const graph_t *graph, yyjson_mut_doc *doc,
 /* Get data from json's nodes array
  *
  * return 0 on success, return -1 on failure */
-int node_get_data(node_t *current_node, yyjson_doc *doc, const int *id);
+int node_get_data_by_id(node_t *current_node, yyjson_doc *doc, const int *id);
 /* Get data from json's lines array
  *
  * return 0 on success, return -1 on failure */
-int line_get_data(line_t *current_line, yyjson_doc *doc, const int *id);
-
+int line_get_data_by_id(line_t *current_line, yyjson_doc *doc, const int *id);
+/* Let graph read json file
+ *
+ * Graph will get all nodes and lines array from the file if the file wrote
+ * correctly. Return 0 in success, -1 on failure */
 int graph_read_json(graph_t *graph, const char *filepath, char **buffer);
 
 int get_filename(const char *dir_path);
