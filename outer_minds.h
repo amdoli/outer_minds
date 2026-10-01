@@ -34,6 +34,17 @@ typedef struct {
   int lines_limit;
 } graph_t;
 
+/* Error macros */
+typedef enum {
+  OUTER_MINDS_SUCCESS = 0,
+  OUTER_MINDS_ERR_NULL_POINTER = -1,
+  OUTER_MINDS_ERR_GRAPH_NULL = -2,
+  OUTER_MINDS_ERR_DOC_NULL = -3,
+  OUTER_MINDS_ERR_FILE_OPEN = -4
+} outer_minds_status_t;
+
+/* Read error state */
+void outer_minds_read_err(const outer_minds_status_t *err);
 /* Initialiaze the graph
  *
    return 0 on success, return -1 on error */
@@ -67,7 +78,7 @@ int line_get_data_by_id(line_t *current_line, yyjson_doc *doc, const int *id);
  *
  * Graph will get all nodes and lines array from the file if the file wrote
  * correctly. Return 0 in success, -1 on failure */
-int graph_read_json(graph_t *graph, const char *filepath, char **buffer);
+int graph_read_json(graph_t *graph, const char *filepath);
 
 int get_filename(const char *dir_path);
 

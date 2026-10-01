@@ -34,7 +34,33 @@
 #include <windows.h>
 #endif
 
-/* Outer_minds Types */
+void outer_minds_read_err(const outer_minds_status_t *err) {
+  switch (*err) {
+  case OUTER_MINDS_SUCCESS:
+    printf("Succeded.\n");
+    break;
+
+  case OUTER_MINDS_ERR_NULL_POINTER:
+    fprintf(stderr, "Error, There are a Null pointer.\n");
+    break;
+
+  case OUTER_MINDS_ERR_GRAPH_NULL:
+    fprintf(stderr, "Error, Graph isn't initiated.\n");
+    break;
+
+  case OUTER_MINDS_ERR_DOC_NULL:
+    fprintf(stderr, "Error, Doc isn't initiated.\n");
+    break;
+
+  case OUTER_MINDS_ERR_FILE_OPEN:
+    fprintf(stderr, "Error, File didn't opened.\n");
+    break;
+
+  default:
+    fprintf(stderr, "Can't read the Error: err value isn't listed.\n");
+    break;
+  }
+}
 
 int graph_init(graph_t *current_graph) {
   if (!current_graph) {
@@ -275,7 +301,7 @@ int line_get_data_by_id(line_t *current_line, yyjson_doc *doc, const int *id) {
 }
 
 // test this if I didn't like it I will use the pointer method
-int graph_read_json(graph_t *graph, const char *filepath, char **buffer) {
+int graph_read_json(graph_t *graph, const char *filepath) {
   if (!graph) {
     fprintf(stderr, "Error: graph is NULL\n");
     return -1;
@@ -307,7 +333,6 @@ int graph_read_json(graph_t *graph, const char *filepath, char **buffer) {
     return -1;
   }
 
-  *buffer = yyjson_write(doc, YYJSON_WRITE_PRETTY, NULL);
   yyjson_doc_free(doc);
   return 0;
 }
